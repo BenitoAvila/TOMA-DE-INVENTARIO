@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toma de Inventario Semanal</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --primary: #1f6feb;
+        --primary-dark: #174ea6;
+        --background: #f5f8ff;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --border: #d1d5db;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: var(--background);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 840px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      p {
+        color: var(--muted);
+      }
+
+      form {
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      label {
+        font-weight: 700;
+      }
+
+      input {
+        width: 100%;
+        padding: 0.6rem 0.7rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+
+      .row {
+        display: grid;
+        gap: 0.8rem;
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 680px) {
+        .row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      button {
+        border: 0;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        padding: 0.65rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.6rem;
+      }
+
+      a {
+        color: var(--primary-dark);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .secondary {
+        background: #ef4444;
+      }
+
+      .empty {
+        color: var(--muted);
+        text-align: center;
+        padding: 0.6rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <h1>Links de toma de inventario semanal</h1>
+        <p>Agrega aquí los enlaces que usas cada semana. Se guardan en este navegador.</p>
+
+        <form id="link-form">
+          <div class="row">
+            <div>
+              <label for="nombre">Nombre del enlace</label>
+              <input id="nombre" name="nombre" placeholder="Ej: Reporte semana 12" required />
+            </div>
+            <div>
+              <label for="url">URL</label>
+              <input id="url" name="url" type="url" placeholder="https://..." required />
+            </div>
+          </div>
+          <button type="submit">Guardar enlace</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Mis enlaces</h2>
+        <ul id="lista-links"></ul>
+        <div id="vacio" class="empty">Aún no has agregado enlaces.</div>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = 'inventario_semanal_links';
+      const form = document.getElementById('link-form');
+      const lista = document.getElementById('lista-links');
+      const vacio = document.getElementById('vacio');
+
+      function loadLinks() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveLinks(links) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+      }
+
+      function render() {
+        const links = loadLinks();
+        lista.innerHTML = '';
+
+        vacio.style.display = links.length ? 'none' : 'block';
+
+        links.forEach((link, index) => {
+          const item = document.createElement('li');
+
+          const anchor = document.createElement('a');
+          anchor.href = link.url;
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+          anchor.textContent = link.nombre;
+
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = 'Eliminar';
+          deleteButton.className = 'secondary';
+          deleteButton.addEventListener('click', () => {
+            const updated = loadLinks().filter((_, i) => i !== index);
+            saveLinks(updated);
+            render();
+          });
+
+          item.append(anchor, deleteButton);
+          lista.appendChild(item);
+        });
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const nombre = form.nombre.value.trim();
+        const url = form.url.value.trim();
+
+        if (!nombre || !url) {
+          return;
+        }
+
+        const links = loadLinks();
+        links.push({ nombre, url });
+        saveLinks(links);
+
+        form.reset();
+        form.nombre.focus();
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
